@@ -56,7 +56,7 @@ const state = {
     invuln: 0, // small invulnerability after getting hit
   },
 
-  shop: { damageCost: 10, speedCost: 10 },
+  shop: { damageCost: 10, speedCost: 10, healCost: 12 },
   keys: new Set(),
   mouse: { x: 0, y: 0, down: false },
   enemies: [],
@@ -345,8 +345,6 @@ function step() {
       if (state.breakTimer <= 0) {
         startWave(state.wave);
       }
-    }
-
     } else {
       updateEnemies();
       updateCoinDrops();
@@ -363,6 +361,7 @@ function step() {
 
   draw();
   requestAnimationFrame(step);
+}
 
 // ---------- INPUT ----------
 window.addEventListener("keydown", (e) => {
@@ -427,3 +426,4 @@ document.getElementById("buyHeal").addEventListener("click", () => {
 updateUI();
 beginBreak();
 step();
+
