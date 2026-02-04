@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Web Arena Game</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">Arena</div>
+
+    <div class="hud">
+      <div class="hud-item">HP: <span id="hp">100</span></div>
+      <div class="hud-item">Coins: <span id="coins">0</span></div>
+      <div class="hud-item">KOs: <span id="kos">0</span></div>
+    </div>
+
+    <button id="btnPause" class="btn">Pause</button>
+  </header>
+
+  <main class="wrap">
+    <canvas id="game" width="960" height="540"></canvas>
+
+    <aside class="panel">
+      <h2>Shop</h2>
+
+      <button class="btn full" id="buyDamage">
+        +Damage (Cost: <span id="costDamage">10</span>)
+      </button>
+
+      <button class="btn full" id="buySpeed">
+        +Speed (Cost: <span id="costSpeed">10</span>)
+      </button>
+
+      <hr />
+
+      <p class="help">
+        Controls: <b>WASD</b> move, <b>Space</b> dash, <b>Click</b> attack
+      </p>
+      <button class="btn full" id="buyHeal">
+          Heal +30 (Cost: <span id="costHeal">12</span>)
+        </button>
+
+        <div class="hud-mini">
+          Break Heal: <span id="breakHeal">ON</span>
+        </div>
+
+    </aside>
+  </main>
+
+  <script src="game.js"></script>
+</body>
+</html>
