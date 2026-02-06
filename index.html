@@ -14,14 +14,20 @@
       <div class="hud-item">HP: <span id="hp">100</span></div>
       <div class="hud-item">Coins: <span id="coins">0</span></div>
       <div class="hud-item">KOs: <span id="kos">0</span></div>
+      <div class="hud-item">Teleports: <span id="teleports">3</span></div>
     </div>
 
-    <button id="btnPause" class="btn">Pause</button>
+    <div class="topbar-actions">
+      <button id="btnAutopilot" class="btn">Autopilot: ON</button>
+      <button id="btnPause" class="btn">Pause</button>
+    </div>
+
+    <button id="btnAuto" class="btn">Auto: ON</button>
   </header>
 
   <main class="wrap">
-    <canvas id="game" width="960" height="540"></canvas>
-
+    <canvas id="game" width="1120" height="640"></canvas>
+    
     <aside class="panel">
       <h2>Shop</h2>
 
@@ -36,7 +42,8 @@
       <hr />
 
       <p class="help">
-        Controls: <b>WASD</b> move, <b>Space</b> dash, <b>Click</b> attack
+        Controls: <b>WASD</b> move, <b>Space</b> dash, <b>Click</b> attack.
+        <b>T</b> teleport (3 per level). Autopilot can take over for hands-free gameplay.
       </p>
       <button class="btn full" id="buyHeal">
           Heal +30 (Cost: <span id="costHeal">12</span>)

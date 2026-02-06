@@ -14,7 +14,13 @@ body {
   border-bottom: 1px solid rgba(255,255,255,0.08);
 }
 
+.topbar-actions {
+  display: flex;
+  gap: 10px;
+}
+
 .brand { font-weight: 700; letter-spacing: 0.5px; }
+
 
 .hud { display: flex; gap: 14px; opacity: 0.95; }
 .hud-item { font-size: 14px; }
@@ -29,14 +35,14 @@ body {
 canvas {
   width: 100%;
   height: auto;
-  background: radial-gradient(circle at 30% 20%, #1b2a52, #0a0f1d 60%);
+  background: radial-gradient(circle at 20% 15%, #2b7bff, #120f2b 65%);
   border: 1px solid rgba(255,255,255,0.08);
   border-radius: 14px;
 }
 
 canvas {
   display: block;
-  min-height: 540px;
+  min-height: 640px;
 }
 
 
