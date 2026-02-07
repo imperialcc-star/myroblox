@@ -461,7 +461,7 @@ function draw() {
     ctx.font = "14px system-ui";
     ctx.fillStyle = "rgba(255,255,255,0.75)";
     ctx.fillText("Use the shop now. Click canvas to shoot when it starts.", 290, canvas.height / 2 + 34);
-  }
+   }
 
   if (paused) {
     ctx.fillStyle = "rgba(0,0,0,0.55)";
@@ -576,7 +576,7 @@ function drawRobloxCharacter(x, y, r, palette) {
     ctx.stroke();
   }
 
-  if (palette.hasGun) {
+    if (palette.hasGun) {
     const angle = palette.aimAngle ?? 0;
     ctx.save();
     ctx.translate(x + bodyW / 2 - 2 * scale, y - bodyH / 2 + 8 * scale);
@@ -695,6 +695,11 @@ ui.autopilot.addEventListener("click", () => {
   updateUI();
 });
 
+ui.autopilot.addEventListener("click", () => {
+  state.autopilot = !state.autopilot;
+  updateUI();
+});
+
 // Shop
 document.getElementById("buyDamage").addEventListener("click", () => {
   const c = state.shop.damageCost;
@@ -733,4 +738,3 @@ document.getElementById("buyHeal").addEventListener("click", () => {
 updateUI();
 beginBreak();
 step();
-
