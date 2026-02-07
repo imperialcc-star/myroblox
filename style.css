@@ -27,26 +27,35 @@ body {
 
 .wrap {
   display: grid;
-  grid-template-columns: 1fr 260px;
-  gap: 14px;
+  grid-template-columns: minmax(180px, 1fr) minmax(520px, 2.6fr) minmax(180px, 1fr);
+  gap: 16px;
   padding: 14px;
+  align-items: stretch;
 }
 
 canvas {
   width: 100%;
-  height: auto;
-  background: radial-gradient(circle at 20% 15%, #2b7bff, #120f2b 65%);
+  height: 640px;
   border: 1px solid rgba(255,255,255,0.08);
   border-radius: 14px;
+  display: block;
 }
 
-canvas {
-  display: block;
-  min-height: 640px;
+.game-canvas {
+  background: radial-gradient(circle at 20% 15%, #2b7bff, #120f2b 65%);
+}
+
+.side-canvas {
+  background: linear-gradient(180deg, rgba(12,14,25,0.9), rgba(24,28,48,0.95));
+}
+
+.panel-wrap {
+  padding: 0 14px 14px;
 }
 
 
 .panel {
+  max-width: 520px;
   border: 1px solid rgba(255,255,255,0.08);
   border-radius: 14px;
   padding: 12px;
