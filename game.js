@@ -1,5 +1,9 @@
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
+const leftPanel = document.getElementById("leftPanel");
+const rightPanel = document.getElementById("rightPanel");
+const leftCtx = leftPanel.getContext("2d");
+const rightCtx = rightPanel.getContext("2d");
 
 const ui = {
   hp: document.getElementById("hp"),
@@ -38,6 +42,8 @@ const CFG = {
   teleportCooldownFrames: 40,
   bulletSpeed: 7.5,
   bulletRange: 320,
+  zoom: 1.6,
+  sideScrollSpeed: 1.4,
 
 };
 
@@ -50,8 +56,8 @@ const state = {
   completed: false,
 
   player: {
-    x: canvas.width / 2,
-    y: canvas.height / 2,
+    x: (canvas.width / CFG.zoom) / 2,
+    y: (canvas.height / CFG.zoom) * 0.75,
     r: 14,
     hp: 100,
     hpMax: 100,
@@ -77,12 +83,38 @@ const state = {
   teleportCharges: CFG.teleportPerWave,
   teleportCooldown: 0,
   muzzleFlash: 0,
+  sideScroll: 0,
+  camera: { x: 0, y: 0, zoom: CFG.zoom },
 };
 
 function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
 function dist(ax, ay, bx, by) { return Math.hypot(ax - bx, ay - by); }
 
 function angleTo(ax, ay, bx, by) { return Math.atan2(by - ay, bx - ax); }
+function getViewDimensions() {
+  return {
+    viewW: canvas.width / CFG.zoom,
+    viewH: canvas.height / CFG.zoom,
+  };
+}
+
+function getLaneBounds() {
+  const { viewW } = getViewDimensions();
+  const laneWidth = viewW * 0.62;
+  const laneLeft = (viewW - laneWidth) / 2;
+  return {
+    laneLeft,
+    laneRight: laneLeft + laneWidth,
+  };
+}
+
+function updateCamera() {
+  const { viewW, viewH } = getViewDimensions();
+  const camX = state.player.x - viewW / 2;
+  const camY = state.player.y - viewH * 0.70;
+  state.camera = { x: camX, y: camY, zoom: CFG.zoom };
+  return state.camera;
+}
 function updateUI() {
   ui.hp.textContent = Math.max(0, Math.floor(state.player.hp));
   ui.coins.textContent = state.coins;
@@ -126,14 +158,11 @@ function applyLevelRewards() {
 }
 
 function spawnEnemy(hp, speed) {
-  // Spawn around edges
-  const pad = 20;
-  const side = Math.floor(Math.random() * 4);
-  let x, y;
-  if (side === 0) { x = Math.random() * canvas.width; y = -pad; }
-  if (side === 1) { x = canvas.width + pad; y = Math.random() * canvas.height; }
-  if (side === 2) { x = Math.random() * canvas.width; y = canvas.height + pad; }
-  if (side === 3) { x = -pad; y = Math.random() * canvas.height; }
+  const { laneLeft, laneRight } = getLaneBounds();
+  const { y: camY } = updateCamera();
+  const pad = 30;
+  const x = laneLeft + Math.random() * (laneRight - laneLeft);
+  const y = camY - pad;
 
   state.enemies.push({
     x, y,
@@ -178,10 +207,13 @@ function getAutopilotInput() {
   const target = getAutopilotTarget();
   let dx = 0;
   let dy = 0;
+  const { viewH } = getViewDimensions();
+  const { laneLeft, laneRight } = getLaneBounds();
+  const laneCenter = (laneLeft + laneRight) / 2;
 
   if (state.inBreak || !target) {
-    dx = canvas.width / 2 - p.x;
-    dy = canvas.height / 2 - p.y;
+    dx = laneCenter - p.x;
+    dy = viewH * 0.75 - p.y;
   } else {
     const d = dist(p.x, p.y, target.x, target.y);
     if (d > 90) {
@@ -228,8 +260,12 @@ function movePlayer() {
   p.x += dx * p.speed;
   p.y += dy * p.speed;
 
-  p.x = clamp(p.x, p.r, canvas.width - p.r);
-  p.y = clamp(p.y, p.r, canvas.height - p.r);
+  const { laneLeft, laneRight } = getLaneBounds();
+  const { viewH } = getViewDimensions();
+  const minY = 0;
+  const maxY = viewH * 2.2;
+  p.x = clamp(p.x, laneLeft + p.r, laneRight - p.r);
+  p.y = clamp(p.y, minY + p.r, maxY - p.r);
 
   if (p.dashCooldown > 0) p.dashCooldown -= 1;
   if (p.attackCooldown > 0) p.attackCooldown -= 1;
@@ -258,8 +294,12 @@ function dash(direction = null) {
   p.x += dx * 85;
   p.y += dy * 85;
 
-  p.x = clamp(p.x, p.r, canvas.width - p.r);
-  p.y = clamp(p.y, p.r, canvas.height - p.r);
+  const { laneLeft, laneRight } = getLaneBounds();
+  const { viewH } = getViewDimensions();
+  const minY = 0;
+  const maxY = viewH * 2.2;
+  p.x = clamp(p.x, laneLeft + p.r, laneRight - p.r);
+  p.y = clamp(p.y, minY + p.r, maxY - p.r);
 
   p.dashCooldown = 90;
 }
@@ -269,12 +309,14 @@ function teleport() {
   if (state.teleportCharges <= 0) return;
   if (state.teleportCooldown > 0) return;
 
-  let best = { x: canvas.width / 2, y: canvas.height / 2 };
+  const { laneLeft, laneRight } = getLaneBounds();
+  const { viewH } = getViewDimensions();
+  let best = { x: (laneLeft + laneRight) / 2, y: viewH * 0.7 };
   let bestScore = -Infinity;
   for (let i = 0; i < 12; i++) {
     const candidate = {
-      x: 40 + Math.random() * (canvas.width - 80),
-      y: 40 + Math.random() * (canvas.height - 80),
+      x: laneLeft + 40 + Math.random() * (laneRight - laneLeft - 80),
+      y: 40 + Math.random() * (viewH * 1.6),
     };
     let nearest = Infinity;
     for (const e of state.enemies) {
@@ -316,9 +358,9 @@ function updateEnemies() {
   const p = state.player;
 
   for (const e of state.enemies) {
-    const a = angleTo(e.x, e.y, p.x, p.y);
-    e.x += Math.cos(a) * e.speed;
-    e.y += Math.sin(a) * e.speed;
+    const drift = (p.x - e.x) * 0.015;
+    e.x += drift;
+    e.y += e.speed;
 
     // contact damage
     if (e.hitCd > 0) e.hitCd -= 1;
@@ -383,30 +425,11 @@ function draw() {
 
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.translate(ox, oy);
 
-  drawBackground();
+  const { x: camX, y: camY, zoom } = updateCamera();
+  ctx.setTransform(zoom, 0, 0, zoom, (-camX + ox) * zoom, (-camY + oy) * zoom);
 
-  // player
-  const p = state.player;
-  const aimAngle = angleTo(p.x, p.y, state.mouse.x, state.mouse.y);
-  drawRobloxCharacter(p.x, p.y, p.r, {
-    skin: "#f8d7c2",
-    hair: "#6a3a90",
-    outfit: "#ff8fb8",
-    accent: "#ffd76d",
-    glow: p.invuln > 0 ? 0.35 : 0,
-    hasGun: true,
-    aimAngle,
-    muzzleFlash: state.muzzleFlash,
-  });
-
-  // aim line
-  ctx.beginPath();
-  ctx.moveTo(p.x, p.y);
-  ctx.lineTo(state.mouse.x, state.mouse.y);
-  ctx.strokeStyle = "rgba(255,255,255,0.16)";
-  ctx.stroke();
+  drawGround(camX, camY);
 
   // enemies
   for (const e of state.enemies) {
@@ -427,6 +450,19 @@ function draw() {
     ctx.fillStyle = "rgba(255,255,255,0.75)";
     ctx.fillRect(x, y, w * (e.hp / e.hpMax), h);
   }
+
+  // player
+  const p = state.player;
+  drawRobloxCharacter(p.x, p.y, p.r, {
+    skin: "#f8d7c2",
+    hair: "#6a3a90",
+    outfit: "#ff8fb8",
+    accent: "#ffd76d",
+    glow: p.invuln > 0 ? 0.35 : 0,
+    hasGun: true,
+    aimAngle: -Math.PI / 2,
+    muzzleFlash: state.muzzleFlash,
+  });
 
   // coin popups
   for (const c of state.coinsDrops) {
@@ -496,25 +532,66 @@ function draw() {
   }
 }
 
-function drawBackground() {
-  ctx.save();
-  const grad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-  grad.addColorStop(0, "#2b9df4");
-  grad.addColorStop(0.45, "#6bd4b6");
-  grad.addColorStop(0.9, "#f7a1d3");
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+function drawGround(camX, camY) {
+  const { viewW, viewH } = getViewDimensions();
+  const visibleW = viewW;
+  const visibleH = viewH;
+  const tile = 32;
+  const startX = Math.floor((camX - tile) / tile) * tile;
+  const startY = Math.floor((camY - tile) / tile) * tile;
+  const endX = camX + visibleW + tile;
+  const endY = camY + visibleH + tile;
 
-  ctx.globalAlpha = 0.2;
-  for (let i = 0; i < 45; i++) {
-    const x = (i * 97) % canvas.width;
-    const y = (i * 53) % canvas.height;
-    ctx.beginPath();
-    ctx.arc(x, y, 90, 0, Math.PI * 2);
-    ctx.fillStyle = i % 2 === 0 ? "#fff6a6" : "#b8f3ff";
-    ctx.fill();
+  ctx.fillStyle = "#f2d85b";
+  ctx.fillRect(camX, camY, visibleW, visibleH);
+
+  ctx.strokeStyle = "rgba(165, 135, 45, 0.35)";
+  ctx.lineWidth = 1;
+  for (let x = startX; x <= endX; x += tile) {
+    for (let y = startY; y <= endY; y += tile) {
+      ctx.strokeRect(x, y, tile, tile);
+    }
   }
-  ctx.restore();
+
+  const { laneLeft, laneRight } = getLaneBounds();
+  ctx.strokeStyle = "rgba(120, 100, 35, 0.7)";
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(laneLeft, camY);
+  ctx.lineTo(laneLeft, camY + visibleH);
+  ctx.moveTo(laneRight, camY);
+  ctx.lineTo(laneRight, camY + visibleH);
+  ctx.stroke();
+}
+
+function drawSidePanels() {
+  const panels = [
+    { canvas: leftPanel, ctx: leftCtx },
+    { canvas: rightPanel, ctx: rightCtx },
+  ];
+  state.sideScroll = (state.sideScroll + CFG.sideScrollSpeed) % 160;
+
+  for (const panel of panels) {
+    const { ctx: pctx, canvas: pc } = panel;
+    pctx.setTransform(1, 0, 0, 1, 0, 0);
+    pctx.clearRect(0, 0, pc.width, pc.height);
+    pctx.fillStyle = "#101522";
+    pctx.fillRect(0, 0, pc.width, pc.height);
+
+    pctx.fillStyle = "#252c3f";
+    pctx.fillRect(pc.width * 0.2, 0, pc.width * 0.6, pc.height);
+
+    pctx.fillStyle = "#f7d667";
+    const stripeH = 38;
+    for (let y = -stripeH; y < pc.height + stripeH; y += stripeH * 2) {
+      const offsetY = y + state.sideScroll;
+      pctx.fillRect(pc.width * 0.48, offsetY, pc.width * 0.04, stripeH);
+    }
+
+    pctx.strokeStyle = "rgba(255,255,255,0.12)";
+    pctx.lineWidth = 2;
+    pctx.strokeRect(6, 6, pc.width - 12, pc.height - 12);
+  }
 }
 
 function drawRobloxCharacter(x, y, r, palette) {
@@ -660,6 +737,7 @@ function step() {
     updateUI();
   }
 
+  drawSidePanels();
   draw();
   requestAnimationFrame(step);
 }
@@ -675,8 +753,11 @@ window.addEventListener("keyup", (e) => state.keys.delete(e.key.toLowerCase()));
 
 canvas.addEventListener("mousemove", (e) => {
   const rect = canvas.getBoundingClientRect();
-  state.mouse.x = (e.clientX - rect.left) * (canvas.width / rect.width);
-  state.mouse.y = (e.clientY - rect.top) * (canvas.height / rect.height);
+  const screenX = (e.clientX - rect.left) * (canvas.width / rect.width);
+  const screenY = (e.clientY - rect.top) * (canvas.height / rect.height);
+  const { x: camX, y: camY, zoom } = state.camera;
+  state.mouse.x = screenX / zoom + camX;
+  state.mouse.y = screenY / zoom + camY;
 });
 
 canvas.addEventListener("mousedown", () => {
@@ -688,11 +769,6 @@ window.addEventListener("mouseup", () => state.mouse.down = false);
 // Pause
 document.getElementById("btnPause").addEventListener("click", () => {
   paused = !paused;
-});
-
-ui.autopilot.addEventListener("click", () => {
-  state.autopilot = !state.autopilot;
-  updateUI();
 });
 
 ui.autopilot.addEventListener("click", () => {
