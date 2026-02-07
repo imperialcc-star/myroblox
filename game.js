@@ -738,4 +738,3 @@ document.getElementById("buyHeal").addEventListener("click", () => {
 updateUI();
 beginBreak();
 step();
-
