@@ -10,6 +10,7 @@ const ui = {
   costHeal: document.getElementById("costHeal"),
   breakHeal: document.getElementById("breakHeal"),
   autopilot: document.getElementById("btnAutopilot"),
+  auto: document.getElementById("btnAuto"),
   teleports: document.getElementById("teleports"),
 };
 
@@ -94,6 +95,9 @@ function updateUI() {
 
   ui.breakHeal.textContent = state.inBreak ? "ON" : "OFF";
   ui.autopilot.textContent = `Autopilot: ${state.autopilot ? "ON" : "OFF"}`;
+  if (ui.auto) {
+    ui.auto.textContent = `Auto: ${state.autopilot ? "ON" : "OFF"}`;
+  }
   ui.teleports.textContent = state.teleportCharges;
 }
 
@@ -695,10 +699,12 @@ ui.autopilot.addEventListener("click", () => {
   updateUI();
 });
 
-ui.autopilot.addEventListener("click", () => {
-  state.autopilot = !state.autopilot;
-  updateUI();
-});
+if (ui.auto) {
+  ui.auto.addEventListener("click", () => {
+    state.autopilot = !state.autopilot;
+    updateUI();
+  });
+}
 
 // Shop
 document.getElementById("buyDamage").addEventListener("click", () => {
